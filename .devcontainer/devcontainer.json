@@ -10,6 +10,9 @@
     "python.pythonPath": "/workspace/venv/bin/python",
     "terminal.integrated.defaultProfile.linux": "bash"
   },
-  "extensions": ["ms-python.python"],
+  "extensions": [
+    "ms-python.python",
+    "ms-toolsai.jupyter" // Install Jupyter support for .ipynb files
+  ],
   "postCreateCommand": "echo 'source /workspace/venv/bin/activate' >> ~/.bashrc"
 }
