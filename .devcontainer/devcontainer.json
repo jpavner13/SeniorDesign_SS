@@ -14,5 +14,5 @@
     "ms-python.python",
     "ms-toolsai.jupyter" // Install Jupyter support for .ipynb files
   ],
-  "postCreateCommand": "echo 'source /workspace/venv/bin/activate' >> ~/.bashrc"
+  "postCreateCommand": "echo 'source /workspace/venv/bin/activate' >> ~/.bashrc && git remote set-url origin https://github.com/jpavner13/SeniorDesign_SS && gh auth login || echo 'GitHub authentication skipped.'"
 }
