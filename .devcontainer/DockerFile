@@ -1,0 +1,32 @@
+# Use the Ubuntu base image
+FROM ubuntu:latest
+
+# Set default shell during Docker image build to bash
+SHELL ["/bin/bash", "-c"]
+
+# Update and install dependencies
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    python3-venv \
+    curl \
+    vim \
+    git \
+    # Add other packages as needed
+    && apt-get clean
+
+# Set the working directory
+WORKDIR /workspace
+
+# Create and set up a virtual environment in /workspace/venv
+RUN python3 -m venv /workspace/venv
+
+# Install Python dependencies
+COPY requirements.txt .
+RUN /workspace/venv/bin/pip install --no-cache-dir -r requirements.txt
+
+# Copy the rest of the project files into the container
+COPY . .
+
+# Set the default command to start a bash shell with the virtual environment activated
+CMD ["/bin/bash", "-c", "source /workspace/venv/bin/activate && exec /bin/bash"]

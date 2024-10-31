@@ -1,0 +1,14 @@
+{
+  "name": "SS_Drones",
+  "dockerFile": "DockerFile",
+  "context": "..", // Pointing to the root of the project
+  "workspaceFolder": "/workspace", // Set the workspace folder to one level above src
+  "mounts": [
+    "source=${localWorkspaceFolder}/src,target=/workspace/src,type=bind"
+  ],
+  "settings": {
+    "python.pythonPath": "/workspace/venv/bin/python"
+  },
+  "extensions": ["ms-python.python"],
+  "postCreateCommand": "echo 'Virtual environment is set up. You can now run your code.'"
+}
