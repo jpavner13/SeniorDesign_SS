@@ -16,16 +16,16 @@ class DronesGui:  # Blueprint of our GUI, Class.
         self.blackout_canvas = Canvas(Button_Frame, width=100, height=100, bg="grey", highlightthickness=0)
         self.blackout_canvas.pack(side=LEFT, padx=10, pady=10)
         self.blackout_canvas.create_oval(10, 10, 90, 90, fill="red", outline="")  
-        self.blackout_canvas.create_text(50, 50, text="BLACKOUT", fill="white")  
+        self.blackout_canvas.create_text(50, 50, text="ESTOP", fill="white")  
 
-        self.blackout_canvas.bind("<Button-1>", lambda e: self.blackout())
+        self.blackout_canvas.bind("<Button-1>", lambda e: self.estop())
 
         self.brownout_canvas = Canvas(Button_Frame, width=100, height=100, bg="grey", highlightthickness=0)
         self.brownout_canvas.pack(side=LEFT, padx=10, pady=10)
         self.brownout_canvas.create_oval(10, 10, 90, 90, fill="yellow", outline="")  
-        self.brownout_canvas.create_text(50, 50, text="BROWNOUT", fill="black")  
+        self.brownout_canvas.create_text(50, 50, text="SAFETY", fill="black")  
 
-        self.brownout_canvas.bind("<Button-1>", lambda e: self.brownout())
+        self.brownout_canvas.bind("<Button-1>", lambda e: self.safety())
 
         self.enable_canvas = Canvas(Button_Frame, width=100, height=100, bg="grey", highlightthickness=0)
         self.enable_canvas.pack(side=LEFT, padx=10, pady=10)
@@ -60,15 +60,15 @@ class DronesGui:  # Blueprint of our GUI, Class.
     #TODO: Plan for these functions to call scripts or a script(GUI_commands.py) with actual function definitions
     " ********* We want to make sure that this is our GUI init function and only this to make sure this script isn't 1000+ lines *********"
 
-    def blackout(self):
+    def estop(self):
         # TODO: Will need specific code to disconnect Battery from Larger Assembly
         # Feedback can be removed or replaced with some other action
-        self.log_response("Blackout action triggered!")  # or any other action
+        self.log_response("ESTOP action triggered!")  # or any other action
 
-    def brownout(self):
+    def safety(self):
         # TODO: Will need specific code to clear pending and current commands. Drone should begin hovering once pressed
         # TODO: Should also think about disabling proximity sensors around the robot then renabling
-        self.log_response("Brownout action triggered!")  
+        self.log_response("Safety action triggered!")  
 
     def enable(self):
         #TODO: Enable sensors, should be pressed after brownout command
