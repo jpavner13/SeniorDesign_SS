@@ -8,24 +8,24 @@ class DronesGui:  # Blueprint of our GUI, Class.
         self.master.geometry("1400x600") # horizontal x vertical size 
         self.master.configure(bg="black")  
 
-        #Blackout and Brownout killswitches:
+        #ESTOP and Safety Switches Here:
 
         Button_Frame = Frame(self.master, bg="grey", bd=0, highlightthickness=0)  
         Button_Frame.pack(side = TOP, anchor = "ne", padx = 20, pady = 20)  
 
-        self.blackout_canvas = Canvas(Button_Frame, width=100, height=100, bg="grey", highlightthickness=0)
-        self.blackout_canvas.pack(side=LEFT, padx=10, pady=10)
-        self.blackout_canvas.create_oval(10, 10, 90, 90, fill="red", outline="")  
-        self.blackout_canvas.create_text(50, 50, text="ESTOP", fill="white")  
+        self.estop_canvas = Canvas(Button_Frame, width=100, height=100, bg="grey", highlightthickness=0)
+        self.estop_canvas.pack(side=LEFT, padx=10, pady=10)
+        self.estop_canvas.create_oval(10, 10, 90, 90, fill="red", outline="")  
+        self.estop_canvas.create_text(50, 50, text="ESTOP", fill="white")  
 
-        self.blackout_canvas.bind("<Button-1>", lambda e: self.estop())
+        self.estop_canvas.bind("<Button-1>", lambda e: self.estop())
 
-        self.brownout_canvas = Canvas(Button_Frame, width=100, height=100, bg="grey", highlightthickness=0)
-        self.brownout_canvas.pack(side=LEFT, padx=10, pady=10)
-        self.brownout_canvas.create_oval(10, 10, 90, 90, fill="yellow", outline="")  
-        self.brownout_canvas.create_text(50, 50, text="SAFETY", fill="black")  
+        self.safety_canvas = Canvas(Button_Frame, width=100, height=100, bg="grey", highlightthickness=0)
+        self.safety_canvas.pack(side=LEFT, padx=10, pady=10)
+        self.safety_canvas.create_oval(10, 10, 90, 90, fill="yellow", outline="")  
+        self.safety_canvas.create_text(50, 50, text="SAFETY", fill="black")  
 
-        self.brownout_canvas.bind("<Button-1>", lambda e: self.safety())
+        self.safety_canvas.bind("<Button-1>", lambda e: self.safety())
 
         self.enable_canvas = Canvas(Button_Frame, width=100, height=100, bg="grey", highlightthickness=0)
         self.enable_canvas.pack(side=LEFT, padx=10, pady=10)
@@ -33,7 +33,6 @@ class DronesGui:  # Blueprint of our GUI, Class.
         self.enable_canvas.create_text(50, 50, text="ENABLE", fill="white")
 
         self.enable_canvas.bind("<Button-1>", lambda e: self.enable())
-
         
         #Status window
 
@@ -50,12 +49,38 @@ class DronesGui:  # Blueprint of our GUI, Class.
         self.terminal_frame.pack(side=BOTTOM,padx=10, pady=10, anchor="s")  
 
         self.terminal_input = Text(self.terminal_frame, height=5, width=100, font=("Courier", 12), bg="black", fg="white")
-        self.terminal_input.pack(side=LEFT, padx=10)
+        self.terminal_input.pack(side=BOTTOM, padx=10)
 
         self.terminal_input.bind("<Return>", self.execute_command)
 
         self.command_history = []  # Store entered commands here.
         self.history_index = -1   # Track the current position in history
+
+        # Thrustar Command Box
+
+        Thruster_Frame = Frame(self.master, bg="grey")
+        Thruster_Frame.place(relx=0, rely=1.0, anchor="sw", width=250, height=400)
+
+        Label(Thruster_Frame, text="Thrusters", bg="black", fg="white", font=("Helvetica", 12, "bold")).grid(row=0, column=0, columnspan=3, pady=(10, 20))
+
+        # Thruster labels and toggle switches
+        self.thruster_states = {}  # Dictionary to store each thruster's state (on or off)
+        thrusters = ["1A", "1B", "2C", "2D", "1E", "1F", "2G", "2H"]
+
+        for idx, thruster in enumerate(thrusters):
+            # Add label for each thruster
+            Label(Thruster_Frame, text=thruster, bg="black", fg="white", font=("Helvetica", 10)).grid(row=idx+1, column=0, padx=10, pady=5, sticky="w")
+            
+            # Add radio buttons for ON and OFF
+            self.thruster_states[thruster] = StringVar(value="OFF")  # Default state is OFF
+            Radiobutton(Thruster_Frame, text="ON", variable=self.thruster_states[thruster], value="ON", 
+                        bg="black", fg="white", selectcolor="gray", activebackground="black", activeforeground="white").grid(row=idx+1, column=1, padx=5, pady=5)
+            Radiobutton(Thruster_Frame, text="OFF", variable=self.thruster_states[thruster], value="OFF", 
+                        bg="black", fg="white", selectcolor="gray", activebackground="black", activeforeground="white").grid(row=idx+1, column=2, padx=5, pady=5)
+
+        # Test Button to log current states of thrusters (for demonstration)
+        #Button(Thruster_Frame, text="Log States", command=self.log_thruster_states, bg="black", fg="white").grid(row=len(thrusters)+1, column=0, columnspan=3, pady=20)
+
 
     #TODO: Plan for these functions to call scripts or a script(GUI_commands.py) with actual function definitions
     " ********* We want to make sure that this is our GUI init function and only this to make sure this script isn't 1000+ lines *********"
@@ -71,7 +96,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
         self.log_response("Safety action triggered!")  
 
     def enable(self):
-        #TODO: Enable sensors, should be pressed after brownout command
+        #TODO: Enable sensors, should be pressed after safety command
         #TODO: Should also be pressed before drone is able to even move
         self.log_response("Drone Enabled!")
     
