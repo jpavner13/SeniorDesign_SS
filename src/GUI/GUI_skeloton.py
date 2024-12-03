@@ -1,6 +1,9 @@
 from tkinter import *
 import os
 
+#TODO: Plan for these functions to call scripts or a script(GUI_commands.py) with actual function definitions
+" ********* We want to make sure that this is our GUI init function and this is to make sure this script isn't 1000+ lines *********"
+
 class DronesGui:  # Blueprint of our GUI, Class.
     def __init__(self, master):
         self.master = master  
@@ -8,7 +11,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
         self.master.geometry("1400x600") # horizontal x vertical size 
         self.master.configure(bg="black")  
 
-        #ESTOP and Safety Switches Here:
+        #ESTOP, Safety, and Enable Switches/Buttons Here:
 
         Button_Frame = Frame(self.master, bg="grey", bd=0, highlightthickness=0)  
         Button_Frame.pack(side = TOP, anchor = "ne", padx = 20, pady = 20)  
@@ -45,6 +48,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
         self.log_response("Drone GUI initialized.")
 
         #Terminal window
+
         self.terminal_frame = Frame(self.master, bg="black", bd=0, width=350, height=300)
         self.terminal_frame.pack(side=BOTTOM,padx=10, pady=10, anchor="s")  
 
@@ -59,31 +63,30 @@ class DronesGui:  # Blueprint of our GUI, Class.
         # Thrustar Command Box
 
         Thruster_Frame = Frame(self.master, bg="grey")
-        Thruster_Frame.place(relx=0, rely=1.0, anchor="sw", width=250, height=400)
+        Thruster_Frame.place(relx=0, rely=1.0, anchor="sw", width=200, height=350)
 
-        Label(Thruster_Frame, text="Thrusters", bg="black", fg="white", font=("Helvetica", 12, "bold")).grid(row=0, column=0, columnspan=3, pady=(10, 20))
+        Label(Thruster_Frame, text="Thrusters", bg="grey", fg="white", font=("Courier", 24, "bold")).grid(row=0, column=1, columnspan=3, pady=(10, 10))
 
         # Thruster labels and toggle switches
+
         self.thruster_states = {}  # Dictionary to store each thruster's state (on or off)
         thrusters = ["1A", "1B", "2C", "2D", "1E", "1F", "2G", "2H"]
 
-        for idx, thruster in enumerate(thrusters):
+        # "i" is the counter that iterates throughout the list of Buttons
+
+        for i, thruster in enumerate(thrusters):
             # Add label for each thruster
-            Label(Thruster_Frame, text=thruster, bg="black", fg="white", font=("Helvetica", 10)).grid(row=idx+1, column=0, padx=10, pady=5, sticky="w")
+            Label(Thruster_Frame, text=thruster, bg="black", fg="white", font=("Helvetica", 10)).grid(row=i+1, column=0, padx=10, pady=5, sticky="w")
             
             # Add radio buttons for ON and OFF
             self.thruster_states[thruster] = StringVar(value="OFF")  # Default state is OFF
             Radiobutton(Thruster_Frame, text="ON", variable=self.thruster_states[thruster], value="ON", 
-                        bg="black", fg="white", selectcolor="gray", activebackground="black", activeforeground="white").grid(row=idx+1, column=1, padx=5, pady=5)
+                        bg="black", fg="white", selectcolor="gray", activebackground="black", activeforeground="white").grid(row=i+1, column=1, padx=5, pady=5)
             Radiobutton(Thruster_Frame, text="OFF", variable=self.thruster_states[thruster], value="OFF", 
-                        bg="black", fg="white", selectcolor="gray", activebackground="black", activeforeground="white").grid(row=idx+1, column=2, padx=5, pady=5)
+                        bg="black", fg="white", selectcolor="gray", activebackground="black", activeforeground="white").grid(row=i+1, column=2, padx=5, pady=5)
 
         # Test Button to log current states of thrusters (for demonstration)
         #Button(Thruster_Frame, text="Log States", command=self.log_thruster_states, bg="black", fg="white").grid(row=len(thrusters)+1, column=0, columnspan=3, pady=20)
-
-
-    #TODO: Plan for these functions to call scripts or a script(GUI_commands.py) with actual function definitions
-    " ********* We want to make sure that this is our GUI init function and only this to make sure this script isn't 1000+ lines *********"
 
     def estop(self):
         # TODO: Will need specific code to disconnect Battery from Larger Assembly
