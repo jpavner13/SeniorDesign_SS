@@ -49,8 +49,8 @@ class DronesGui:  # Blueprint of our GUI, Class.
 
         #Terminal window
 
-        self.terminal_frame = Frame(self.master, bg="black", bd=0, width=350, height=300)
-        self.terminal_frame.pack(side=BOTTOM,padx=10, pady=10, anchor="s")  
+        self.terminal_frame = Frame(self.master, bg="black", bd=0)
+        self.terminal_frame.place(relx=0.5, rely=1.0, anchor="s", width=900, height=100)
 
         self.terminal_input = Text(self.terminal_frame, height=5, width=100, font=("Courier", 12), bg="black", fg="white")
         self.terminal_input.pack(side=BOTTOM, padx=10)
@@ -81,12 +81,13 @@ class DronesGui:  # Blueprint of our GUI, Class.
             # Add radio buttons for ON and OFF
             self.thruster_states[thruster] = StringVar(value="OFF")  # Default state is OFF
             Radiobutton(Thruster_Frame, text="ON", variable=self.thruster_states[thruster], value="ON", 
-                        bg="black", fg="white", selectcolor="gray", activebackground="black", activeforeground="white").grid(row=i+1, column=1, padx=5, pady=5)
+                        bg="black", fg="white", selectcolor="gray", activebackground="black", activeforeground="white",command=lambda t=thruster: self.update_thruster_state(t, "ON")).grid(row=i+1, column=1, padx=5, pady=5)
+
             Radiobutton(Thruster_Frame, text="OFF", variable=self.thruster_states[thruster], value="OFF", 
-                        bg="black", fg="white", selectcolor="gray", activebackground="black", activeforeground="white").grid(row=i+1, column=2, padx=5, pady=5)
+                        bg="black", fg="white", selectcolor="gray", activebackground="black", activeforeground="white",command=lambda t=thruster: self.update_thruster_state(t, "OFF")).grid(row=i+1, column=2, padx=5, pady=5)
 
         # Test Button to log current states of thrusters (for demonstration)
-        #Button(Thruster_Frame, text="Log States", command=self.log_thruster_states, bg="black", fg="white").grid(row=len(thrusters)+1, column=0, columnspan=3, pady=20)
+        # Button(Thruster_Frame, text="Log States", command=self.log_thruster_states, bg="black", fg="white").grid(row=len(thrusters)+1, column=0, columnspan=3, pady=20)
 
     def estop(self):
         # TODO: Will need specific code to disconnect Battery from Larger Assembly
@@ -122,9 +123,25 @@ class DronesGui:  # Blueprint of our GUI, Class.
         self.command_history.append(command)
         self.history_index = len(self.command_history)  # Move the history index to the end
 
-        if command == "move":
+        if command == "move": # example code of drone moving
             self.log_response("Drone moving!")
+        elif command.startswith("set_thruster"): # command to
+            parts = command.split()
+            if len(parts) == 3:
+                thruster_id = parts[1].upper()
+                state = parts[2].upper()
+                if thruster_id in self.thruster_states and state in ["ON", "OFF"]:
+                    self.thruster_states[thruster_id].set(state)
+                    self.log_response(f"Thruster {thruster_id} {state}")
+                    #self.log_thruster_states()  # Log all states
+                else:
+                    self.log_response(f"Invalid thruster or state: {thruster_id} {state}")
+            else:
+                self.log_response("Invalid syntax. Use: set_thruster <ID> <STATE>.")
+        elif command == "+x":
+            self.plux_x()
         elif command == "clear":
+            self.clear_logger()
             self.terminal_input.delete("1.0", END)
             self.log_response("Terminal Cleared")
         else:
@@ -145,6 +162,29 @@ class DronesGui:  # Blueprint of our GUI, Class.
                 self.history_index += 1
                 self.terminal_input.delete("1.0", END)
                 self.terminal_input.insert("1.0", self.command_history[self.history_index])
+    
+    def update_thruster_state(self, thruster_id, state):
+        """Logs and updates the thruster state when a button is pressed."""
+        self.log_response(f"Thruster {thruster_id} {state}.")
+
+    def clear_logger(self):
+        """Clears all text from the logger."""
+        self.response_log.config(state=NORMAL)  # Enable the logger for editing
+        self.response_log.delete("1.0", END)  # Clear all text
+        self.response_log.config(state=DISABLED)  # Disable editing again
+    
+    def plux_x(self):
+        thrust = ["1A", "1B", "2C", "2D", "1E", "1F", "2G", "2H"]
+        state = ["ON", "OFF"]
+        for t in thrust:  # Use 't' to represent each thruster ID directly
+            if t in ["1B", "2C", "1F", "2G"]:  # Check if the thruster is in this list
+                self.thruster_states[t].set(state[0])  # Set thruster to "ON"
+                self.log_response(f"Thruster {t} {state[0]}")  # Log the action
+            elif t in ["1A", "1E", "2D", "2H"]:  # Check if the thruster is in this list
+                self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
+
+
+
 
 root = Tk()
 icon_path = os.path.join(os.getcwd(), "SS_logo.png")
