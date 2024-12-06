@@ -52,7 +52,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
         #Terminal window
 
         self.terminal_frame = Frame(self.master, bg="black", bd=0)
-        self.terminal_frame.place(relx=0.5, rely=1.0, anchor="s", width=900, height=100)
+        self.terminal_frame.place(relx=0.5, rely=2.0, anchor="s", width=900, height=100)
 
         self.terminal_input = Text(self.terminal_frame, height=5, width=100, font=("Courier", 12), bg="black", fg="white")
         self.terminal_input.pack(side=BOTTOM, padx=10)
@@ -280,10 +280,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
                 self.selected_thruster_states[t].set("OFF")
                 self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
 
-
-
-
-
+  
 root = Tk()
 icon_path = os.path.join(os.getcwd(), "SS_logo.png")
 if os.path.exists(icon_path):
