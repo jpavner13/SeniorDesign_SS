@@ -3,6 +3,8 @@ import os
 
 #TODO: Plan for these functions to call scripts or a script(GUI_commands.py) with actual function definitions
 " ********* We want to make sure that this is our GUI init function and this is to make sure this script isn't 1000+ lines *********"
+thrust = ["1A", "1B", "2C", "2D", "1E", "1F", "2G", "2H"]
+state = ["ON", "OFF"]
 
 class DronesGui:  # Blueprint of our GUI, Class.
     def __init__(self, master):
@@ -63,7 +65,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
         # Thrustar Command Box
 
         Thruster_Frame = Frame(self.master, bg="grey")
-        Thruster_Frame.place(relx=0, rely=1.0, anchor="sw", width=200, height=350)
+        Thruster_Frame.place(relx=0, rely=1.0, anchor="sw", width=200, height=400)
 
         Label(Thruster_Frame, text="Thrusters", bg="grey", fg="white", font=("Courier", 24, "bold")).grid(row=0, column=1, columnspan=3, pady=(10, 10))
 
@@ -73,21 +75,21 @@ class DronesGui:  # Blueprint of our GUI, Class.
         thrusters = ["1A", "1B", "2C", "2D", "1E", "1F", "2G", "2H"]
 
         # "i" is the counter that iterates throughout the list of Buttons
-
+        self.selected_thruster_states = {thruster: StringVar(value="OFF") for thruster in thrusters}
+        # self.thruster_previous_states = {thruster: "OFF" for thruster in thrusters}  # Initialize previous states
         for i, thruster in enumerate(thrusters):
             # Add label for each thruster
             Label(Thruster_Frame, text=thruster, bg="black", fg="white", font=("Helvetica", 10)).grid(row=i+1, column=0, padx=10, pady=5, sticky="w")
             
             # Add radio buttons for ON and OFF
             self.thruster_states[thruster] = StringVar(value="OFF")  # Default state is OFF
-            Radiobutton(Thruster_Frame, text="ON", variable=self.thruster_states[thruster], value="ON", 
-                        bg="black", fg="white", selectcolor="gray", activebackground="black", activeforeground="white",command=lambda t=thruster: self.update_thruster_state(t, "ON")).grid(row=i+1, column=1, padx=5, pady=5)
-
-            Radiobutton(Thruster_Frame, text="OFF", variable=self.thruster_states[thruster], value="OFF", 
-                        bg="black", fg="white", selectcolor="gray", activebackground="black", activeforeground="white",command=lambda t=thruster: self.update_thruster_state(t, "OFF")).grid(row=i+1, column=2, padx=5, pady=5)
+            Radiobutton(Thruster_Frame, text="ON", variable=self.selected_thruster_states[thruster], value="ON", 
+                bg="black", fg="white", selectcolor="gray", activebackground="black", activeforeground="white").grid(row=i+1, column=1, padx=5, pady=5)
+            Radiobutton(Thruster_Frame, text="OFF", variable=self.selected_thruster_states[thruster], value="OFF", 
+                bg="black", fg="white", selectcolor="gray", activebackground="black", activeforeground="white").grid(row=i+1, column=2, padx=5, pady=5)
 
         # Test Button to log current states of thrusters (for demonstration)
-        # Button(Thruster_Frame, text="Log States", command=self.log_thruster_states, bg="black", fg="white").grid(row=len(thrusters)+1, column=0, columnspan=3, pady=20)
+        Button(Thruster_Frame, text="Execute Command", command=self.execute_thruster_command, bg="red", fg="white").grid(row=len(thrusters)+1, column=0, columnspan=3, pady=20)
 
     def estop(self):
         # TODO: Will need specific code to disconnect Battery from Larger Assembly
@@ -122,7 +124,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
         # Add the command to history
         self.command_history.append(command)
         self.history_index = len(self.command_history)  # Move the history index to the end
-
+        self.clear_logger()
         if command == "move": # example code of drone moving
             self.log_response("Drone moving!")
         elif command.startswith("set_thruster"): # command to
@@ -138,9 +140,23 @@ class DronesGui:  # Blueprint of our GUI, Class.
                     self.log_response(f"Invalid thruster or state: {thruster_id} {state}")
             else:
                 self.log_response("Invalid syntax. Use: set_thruster <ID> <STATE>.")
-        elif command == "+x":
-            self.plux_x()
-        elif command == "clear":
+        elif command == "+x": # positive x thrust
+            self.plus_x()
+        elif command == "-x": # negative x thrust
+            self.minus_x()
+        elif command == "+y": # positive y thrust
+            self.plus_y()
+        elif command == "-y": # negative y thrust
+            self.minus_y()
+        elif command == "+z": # positive z thrust
+            self.plus_z()
+        elif command == "-z": # negative z thrust
+            self.minus_z()
+        elif command == "+zs": # positive z spin thrust
+            self.spinp_z()
+        elif command == "-zs": # negative z spin thrust
+            self.spinm_z()  
+        elif command == "clear": # clears the logger
             self.clear_logger()
             self.terminal_input.delete("1.0", END)
             self.log_response("Terminal Cleared")
@@ -163,25 +179,107 @@ class DronesGui:  # Blueprint of our GUI, Class.
                 self.terminal_input.delete("1.0", END)
                 self.terminal_input.insert("1.0", self.command_history[self.history_index])
     
-    def update_thruster_state(self, thruster_id, state):
-        """Logs and updates the thruster state when a button is pressed."""
-        self.log_response(f"Thruster {thruster_id} {state}.")
+    def execute_thruster_command(self):
+        self.clear_logger()
+        for thruster, state_var in self.selected_thruster_states.items(): # gets thruster states
+            state = state_var.get()  # Get the current state (ON/OFF)
+            """ be able to only update and print if a thruster was changed to ON? Not print if it was already ON? """
+            # previous_state = self.thruster_previous_states.get(thruster, "OFF")
+            # if state == "ON" and previous_state != "ON":
+            #     self.thruster_states[thruster].set(state)  # Update the thruster state
+            #     self.log_response(f"{thruster} changed to ON")
+            if state == "ON": # only updates if the thruster is on
+                self.thruster_states[thruster].set(state)  # Update the thruster state
+                self.log_response(f"{thruster} {state}") # only prints if on
+
 
     def clear_logger(self):
         """Clears all text from the logger."""
         self.response_log.config(state=NORMAL)  # Enable the logger for editing
         self.response_log.delete("1.0", END)  # Clear all text
         self.response_log.config(state=DISABLED)  # Disable editing again
-    
-    def plux_x(self):
-        thrust = ["1A", "1B", "2C", "2D", "1E", "1F", "2G", "2H"]
-        state = ["ON", "OFF"]
+
+
+    def plus_x(self):
         for t in thrust:  # Use 't' to represent each thruster ID directly
             if t in ["1B", "2C", "1F", "2G"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("ON")
                 self.thruster_states[t].set(state[0])  # Set thruster to "ON"
                 self.log_response(f"Thruster {t} {state[0]}")  # Log the action
             elif t in ["1A", "1E", "2D", "2H"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("OFF")
                 self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
+
+    def minus_x(self):
+        for t in thrust:  # Use 't' to represent each thruster ID directly
+            if t in ["1A", "1E", "2D", "2H"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("ON")
+                self.thruster_states[t].set(state[0])  # Set thruster to "ON"
+                self.log_response(f"Thruster {t} {state[0]}")  # Log the action
+            elif t in ["1B", "2C", "1F", "2G"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("OFF")
+                self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
+
+    def plus_y(self):
+        for t in thrust:  # Use 't' to represent each thruster ID directly
+            if t in ["2C", "2G", "2D", "2H"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("ON")
+                self.thruster_states[t].set(state[0])  # Set thruster to "ON"
+                self.log_response(f"Thruster {t} {state[0]}")  # Log the action
+            elif t in ["1A", "1B", "1E", "1F"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("OFF")
+                self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
+
+    def minus_y(self):
+        for t in thrust:  # Use 't' to represent each thruster ID directly
+            if t in ["1A", "1B", "1E", "1F"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("ON")
+                self.thruster_states[t].set(state[0])  # Set thruster to "ON"
+                self.log_response(f"Thruster {t} {state[0]}")  # Log the action
+            elif t in ["2C", "2G", "2D", "2H"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("OFF")
+                self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
+
+    def plus_z(self):
+        for t in thrust:  # Use 't' to represent each thruster ID directly
+            if t in ["1A", "1B", "2C", "2D"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("ON")
+                self.thruster_states[t].set(state[0])  # Set thruster to "ON"
+                self.log_response(f"Thruster {t} {state[0]}")  # Log the action
+            elif t in ["1E", "1F", "2H", "2G"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("OFF")
+                self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
+
+    def minus_z(self):
+        for t in thrust:  # Use 't' to represent each thruster ID directly
+            if t in ["1E", "1F", "2H", "2G"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("ON")
+                self.thruster_states[t].set(state[0])  # Set thruster to "ON"
+                self.log_response(f"Thruster {t} {state[0]}")  # Log the action
+            elif t in ["1A", "1B", "2C", "2D"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("OFF")
+                self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
+
+    def spinp_z(self):
+        for t in thrust:  # Use 't' to represent each thruster ID directly
+            if t in ["1A", "1E", "2C", "2G"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("ON")
+                self.thruster_states[t].set(state[0])  # Set thruster to "ON"
+                self.log_response(f"Thruster {t} {state[0]}")  # Log the action
+            elif t in ["1B", "1F", "2D", "2H"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("OFF")
+                self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
+
+    def spinm_z(self):
+        for t in thrust:  # Use 't' to represent each thruster ID directly
+            if t in ["1B", "1F", "2D", "2H"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("ON")
+                self.thruster_states[t].set(state[0])  # Set thruster to "ON"
+                self.log_response(f"Thruster {t} {state[0]}")  # Log the action
+            elif t in ["1A", "1E", "2C", "2G"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("OFF")
+                self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
+
 
 
 
