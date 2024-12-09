@@ -1,4 +1,5 @@
 import paramiko
+import time
 
 class SSH:
     def __init__(self, host, username, password):
@@ -11,15 +12,13 @@ class SSH:
         self.ssh_client = None
 
     def connect(self):
-        """
-        Establishes an SSH connection.
-        """
         self.ssh_client = paramiko.SSHClient()
         self.ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.ssh_client.connect(
             hostname=self.host,
             username=self.username,
-            password=self.password
+            password=self.password,
+            timeout=5  # Set a 10-second timeout
         )
         return "SSH connection established successfully."
 
@@ -38,6 +37,9 @@ class SSH:
         """
         Closes the SSH connection.
         """
+        # Make sure to clean up GPIO pins
         if self.ssh_client:
             self.ssh_client.close()
             self.ssh_client = None
+
+

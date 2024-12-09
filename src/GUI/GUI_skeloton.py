@@ -1,5 +1,7 @@
 from tkinter import *
 import os
+import json
+import threading
 from SSH_Connection import SSH
 
 #TODO: Plan for these functions to call scripts or a script(GUI_commands.py) with actual function definitions
@@ -155,7 +157,157 @@ class DronesGui:  # Blueprint of our GUI, Class.
                 self.history_index += 1
                 self.terminal_input.delete("1.0", END)
                 self.terminal_input.insert("1.0", self.command_history[self.history_index])
+    
+    def execute_thruster_command(self):
+        # self.clear_logger()
+        for thruster, state_var in self.selected_thruster_states.items(): # gets thruster states
+            state = state_var.get()  # Get the current state (ON/OFF)
+            """ be able to only update and print if a thruster was changed to ON? Not print if it was already ON? """
+            # previous_state = self.thruster_previous_states.get(thruster, "OFF")
+            # if state == "ON" and previous_state != "ON":
+            #     self.thruster_states[thruster].set(state)  # Update the thruster state
+            #     self.log_response(f"{thruster} changed to ON")
+            if state == "ON": # only updates if the thruster is on
+                self.thruster_states[thruster].set(state)  # Update the thruster state
+                self.log_response(f"Thruster {thruster} {state}") # only prints if on
 
+
+    # def clear_logger(self):
+    #     """Clears all text from the logger."""
+    #     self.response_log.config(state=NORMAL)  # Enable the logger for editing
+    #     self.response_log.delete("1.0", END)  # Clear all text
+    #     self.response_log.config(state=DISABLED)  # Disable editing again
+
+    def send_thruster_states(self):
+        """
+        Sends the thruster states as a JSON payload to the Raspberry Pi over SSH.
+        """
+        # Collect the thruster states into a dictionary
+        thruster_states = {key: value.get() for key, value in self.thruster_states.items()}
+        
+        # Convert to JSON
+        json_payload = json.dumps(thruster_states)
+
+        # Initialize the SSH connection (make sure SSH connection object is created first)
+        ssh_connection = SSH( "ssdrone.local", "ssdrone", "ssdrone")
+
+        # Run the SSH communication in a separate thread
+        threading.Thread(target=self._send_json_via_ssh, args=(json_payload, ssh_connection)).start()
+
+        
+    def _send_json_via_ssh(self, json_payload, ssh_connection):
+        # Connect to the Raspberry Pi over SSH
+        ssh_connection.connect()  # This uses the SSH instance passed in
+        
+        # Construct the command to send JSON and execute the script
+        command = f'echo \'{json_payload}\' > thruster_states.json && python3 Downloads/RPI5_JSON.py'
+        
+        # Execute the command
+        output, error = ssh_connection.execute_command(command)
+        
+        # Output logging for the SSH communication
+        if output:
+            print(f"SSH Response: {output}")
+        if error:
+            print(f"SSH Error: {error}")
+        
+        # Close the SSH connection after command execution
+        ssh_connection.close()  
+        print("SSH connection closed.")
+
+      ### FUNTION OF +X THRUSTER
+
+    def plus_x(self):
+        for t in thrust:  # Use 't' to represent each thruster ID directly
+            if t in ["1B", "2C", "1F", "2G"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("ON")
+                self.thruster_states[t].set(state[0])  # Set thruster to "ON"
+                self.log_response(f"Thruster {t} {state[0]}")  # Log the action
+            elif t in ["1A", "1E", "2D", "2H"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("OFF")
+                self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
+        self.send_thruster_states()
+
+    ### FUNTION OF -X THRUSTER
+    def minus_x(self):
+        for t in thrust:  # Use 't' to represent each thruster ID directly
+            if t in ["1A", "1E", "2D", "2H"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("ON")
+                self.thruster_states[t].set(state[0])  # Set thruster to "ON"
+                self.log_response(f"Thruster {t} {state[0]}")  # Log the action
+            elif t in ["1B", "2C", "1F", "2G"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("OFF")
+                self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
+
+    ### FUNTION OF +Y THRUSTER
+    def plus_y(self):
+        for t in thrust:  # Use 't' to represent each thruster ID directly
+            if t in ["2C", "2G", "2D", "2H"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("ON")
+                self.thruster_states[t].set(state[0])  # Set thruster to "ON"
+                self.log_response(f"Thruster {t} {state[0]}")  # Log the action
+            elif t in ["1A", "1B", "1E", "1F"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("OFF")
+                self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
+
+    ### FUNTION OF -Y THRUSTER
+    def minus_y(self):
+        for t in thrust:  # Use 't' to represent each thruster ID directly
+            if t in ["1A", "1B", "1E", "1F"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("ON")
+                self.thruster_states[t].set(state[0])  # Set thruster to "ON"
+                self.log_response(f"Thruster {t} {state[0]}")  # Log the action
+            elif t in ["2C", "2G", "2D", "2H"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("OFF")
+                self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
+
+    ### FUNTION OF +Z THRUSTER
+    def plus_z(self):
+        for t in thrust:  # Use 't' to represent each thruster ID directly
+            if t in ["1A", "1B", "2C", "2D"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("ON")
+                self.thruster_states[t].set(state[0])  # Set thruster to "ON"
+                self.log_response(f"Thruster {t} {state[0]}")  # Log the action
+            elif t in ["1E", "1F", "2H", "2G"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("OFF")
+                self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
+
+    ### FUNTION OF -Z THRUSTER
+    def minus_z(self):
+        for t in thrust:  # Use 't' to represent each thruster ID directly
+            if t in ["1E", "1F", "2H", "2G"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("ON")
+                self.thruster_states[t].set(state[0])  # Set thruster to "ON"
+                self.log_response(f"Thruster {t} {state[0]}")  # Log the action
+            elif t in ["1A", "1B", "2C", "2D"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("OFF")
+                self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
+
+    ### FUNTION OF +Z SPIN
+    def spinp_z(self):
+        for t in thrust:  # Use 't' to represent each thruster ID directly
+            if t in ["1A", "1E", "2C", "2G"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("ON")
+                self.thruster_states[t].set(state[0])  # Set thruster to "ON"
+                self.log_response(f"Thruster {t} {state[0]}")  # Log the action
+            elif t in ["1B", "1F", "2D", "2H"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("OFF")
+                self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
+
+    ### FUNTION OF -Z SPIN
+    def spinm_z(self):
+        for t in thrust:  # Use 't' to represent each thruster ID directly
+            if t in ["1B", "1F", "2D", "2H"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("ON")
+                self.thruster_states[t].set(state[0])  # Set thruster to "ON"
+                self.log_response(f"Thruster {t} {state[0]}")  # Log the action
+            elif t in ["1A", "1E", "2C", "2G"]:  # Check if the thruster is in this list
+                self.selected_thruster_states[t].set("OFF")
+                self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
+    
+
+
+  
 root = Tk()
 icon_path = os.path.join(os.getcwd(), "SS_logo.png")
 if os.path.exists(icon_path):
