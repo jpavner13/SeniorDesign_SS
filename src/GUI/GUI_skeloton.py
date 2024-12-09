@@ -1,8 +1,11 @@
 from tkinter import *
 import os
+from SSH_Connection import SSH
 
 #TODO: Plan for these functions to call scripts or a script(GUI_commands.py) with actual function definitions
 " ********* We want to make sure that this is our GUI init function and this is to make sure this script isn't 1000+ lines *********"
+
+thrust = ["1A", "1B", "2C", "2D", "1E", "1F", "2G", "2H"]
 
 class DronesGui:  # Blueprint of our GUI, Class.
     def __init__(self, master):
@@ -86,7 +89,14 @@ class DronesGui:  # Blueprint of our GUI, Class.
                         bg="black", fg="white", selectcolor="gray", activebackground="black", activeforeground="white").grid(row=i+1, column=2, padx=5, pady=5)
 
         # Test Button to log current states of thrusters (for demonstration)
-        #Button(Thruster_Frame, text="Log States", command=self.log_thruster_states, bg="black", fg="white").grid(row=len(thrusters)+1, column=0, columnspan=3, pady=20)
+        self.ssh_connection = SSH(
+            host="172.20.10.2",  # Replace with your Raspberry Pi's IP address
+            username="ssdrone.local",        # Replace with your Raspberry Pi's username
+            password="ssdrone"  # Replace with your Raspberry Pi's password
+        )
+        self.log_response(self.ssh_connection.connect())
+
+
 
     def estop(self):
         # TODO: Will need specific code to disconnect Battery from Larger Assembly
