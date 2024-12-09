@@ -52,9 +52,9 @@ class DronesGui:  # Blueprint of our GUI, Class.
         #Terminal window
 
         self.terminal_frame = Frame(self.master, bg="black", bd=0)
-        self.terminal_frame.place(relx=0.5, rely=2.0, anchor="s", width=900, height=100)
+        self.terminal_frame.place(relx=0.5, rely=1.0, anchor="s", width=950, height=100, x = -25)
 
-        self.terminal_input = Text(self.terminal_frame, height=5, width=100, font=("Courier", 12), bg="black", fg="white")
+        self.terminal_input = Text(self.terminal_frame, height=5, width=100, font=("Courier", 20), bg="black", fg="white")
         self.terminal_input.pack(side=BOTTOM, padx=10)
 
         self.terminal_input.bind("<Return>", self.execute_command)
@@ -124,7 +124,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
         # Add the command to history
         self.command_history.append(command)
         self.history_index = len(self.command_history)  # Move the history index to the end
-        self.clear_logger()
+        # self.clear_logger()
         if command == "move": # example code of drone moving
             self.log_response("Drone moving!")
         elif command.startswith("set_thruster"): # command to
@@ -157,7 +157,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
         elif command == "-zs": # negative z spin thrust
             self.spinm_z()  
         elif command == "clear": # clears the logger
-            self.clear_logger()
+            # self.clear_logger()
             self.terminal_input.delete("1.0", END)
             self.log_response("Terminal Cleared")
         else:
@@ -180,7 +180,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
                 self.terminal_input.insert("1.0", self.command_history[self.history_index])
     
     def execute_thruster_command(self):
-        self.clear_logger()
+        # self.clear_logger()
         for thruster, state_var in self.selected_thruster_states.items(): # gets thruster states
             state = state_var.get()  # Get the current state (ON/OFF)
             """ be able to only update and print if a thruster was changed to ON? Not print if it was already ON? """
@@ -190,16 +190,17 @@ class DronesGui:  # Blueprint of our GUI, Class.
             #     self.log_response(f"{thruster} changed to ON")
             if state == "ON": # only updates if the thruster is on
                 self.thruster_states[thruster].set(state)  # Update the thruster state
-                self.log_response(f"{thruster} {state}") # only prints if on
+                self.log_response(f"Thruster {thruster} {state}") # only prints if on
 
 
-    def clear_logger(self):
-        """Clears all text from the logger."""
-        self.response_log.config(state=NORMAL)  # Enable the logger for editing
-        self.response_log.delete("1.0", END)  # Clear all text
-        self.response_log.config(state=DISABLED)  # Disable editing again
+    # def clear_logger(self):
+    #     """Clears all text from the logger."""
+    #     self.response_log.config(state=NORMAL)  # Enable the logger for editing
+    #     self.response_log.delete("1.0", END)  # Clear all text
+    #     self.response_log.config(state=DISABLED)  # Disable editing again
 
 
+    ### FUNTION OF +X THRUSTER
     def plus_x(self):
         for t in thrust:  # Use 't' to represent each thruster ID directly
             if t in ["1B", "2C", "1F", "2G"]:  # Check if the thruster is in this list
@@ -210,6 +211,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
                 self.selected_thruster_states[t].set("OFF")
                 self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
 
+    ### FUNTION OF -X THRUSTER
     def minus_x(self):
         for t in thrust:  # Use 't' to represent each thruster ID directly
             if t in ["1A", "1E", "2D", "2H"]:  # Check if the thruster is in this list
@@ -220,6 +222,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
                 self.selected_thruster_states[t].set("OFF")
                 self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
 
+    ### FUNTION OF +Y THRUSTER
     def plus_y(self):
         for t in thrust:  # Use 't' to represent each thruster ID directly
             if t in ["2C", "2G", "2D", "2H"]:  # Check if the thruster is in this list
@@ -230,6 +233,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
                 self.selected_thruster_states[t].set("OFF")
                 self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
 
+    ### FUNTION OF -Y THRUSTER
     def minus_y(self):
         for t in thrust:  # Use 't' to represent each thruster ID directly
             if t in ["1A", "1B", "1E", "1F"]:  # Check if the thruster is in this list
@@ -240,6 +244,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
                 self.selected_thruster_states[t].set("OFF")
                 self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
 
+    ### FUNTION OF +Z THRUSTER
     def plus_z(self):
         for t in thrust:  # Use 't' to represent each thruster ID directly
             if t in ["1A", "1B", "2C", "2D"]:  # Check if the thruster is in this list
@@ -250,6 +255,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
                 self.selected_thruster_states[t].set("OFF")
                 self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
 
+    ### FUNTION OF -Z THRUSTER
     def minus_z(self):
         for t in thrust:  # Use 't' to represent each thruster ID directly
             if t in ["1E", "1F", "2H", "2G"]:  # Check if the thruster is in this list
@@ -260,6 +266,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
                 self.selected_thruster_states[t].set("OFF")
                 self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
 
+    ### FUNTION OF +Z SPIN
     def spinp_z(self):
         for t in thrust:  # Use 't' to represent each thruster ID directly
             if t in ["1A", "1E", "2C", "2G"]:  # Check if the thruster is in this list
@@ -270,6 +277,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
                 self.selected_thruster_states[t].set("OFF")
                 self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
 
+    ### FUNTION OF -Z SPIN
     def spinm_z(self):
         for t in thrust:  # Use 't' to represent each thruster ID directly
             if t in ["1B", "1F", "2D", "2H"]:  # Check if the thruster is in this list
