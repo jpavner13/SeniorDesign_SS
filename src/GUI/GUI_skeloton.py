@@ -1,10 +1,15 @@
 from tkinter import *
 import os
+import json
+import threading
+from SSH_Connection import SSH
 
 #TODO: Plan for these functions to call scripts or a script(GUI_commands.py) with actual function definitions
 " ********* We want to make sure that this is our GUI init function and this is to make sure this script isn't 1000+ lines *********"
 thrust = ["1A", "1B", "2C", "2D", "1E", "1F", "2G", "2H"]
 state = ["ON", "OFF"]
+
+thrust = ["1A", "1B", "2C", "2D", "1E", "1F", "2G", "2H"]
 
 class DronesGui:  # Blueprint of our GUI, Class.
     def __init__(self, master):
@@ -89,7 +94,18 @@ class DronesGui:  # Blueprint of our GUI, Class.
                 bg="black", fg="white", selectcolor="gray", activebackground="black", activeforeground="white").grid(row=i+1, column=2, padx=5, pady=5)
 
         # Test Button to log current states of thrusters (for demonstration)
+
+        self.ssh_connection = SSH(
+            host="172.20.10.2",  # Replace with your Raspberry Pi's IP address
+            username="ssdrone.local",        # Replace with your Raspberry Pi's username
+            password="ssdrone"  # Replace with your Raspberry Pi's password
+        )
+        self.log_response(self.ssh_connection.connect())
+
+
+
         Button(Thruster_Frame, text="Execute Command", command=self.execute_thruster_command, bg="red", fg="white").grid(row=len(thrusters)+1, column=0, columnspan=3, pady=20)
+
 
     def estop(self):
         # TODO: Will need specific code to disconnect Battery from Larger Assembly
@@ -199,6 +215,51 @@ class DronesGui:  # Blueprint of our GUI, Class.
                 self.log_response(f"Thruster {thruster} {state}") # only prints if on
 
 
+
+    # def clear_logger(self):
+    #     """Clears all text from the logger."""
+    #     self.response_log.config(state=NORMAL)  # Enable the logger for editing
+    #     self.response_log.delete("1.0", END)  # Clear all text
+    #     self.response_log.config(state=DISABLED)  # Disable editing again
+
+    def send_thruster_states(self):
+        """
+        Sends the thruster states as a JSON payload to the Raspberry Pi over SSH.
+        """
+        # Collect the thruster states into a dictionary
+        thruster_states = {key: value.get() for key, value in self.thruster_states.items()}
+        
+        # Convert to JSON
+        json_payload = json.dumps(thruster_states)
+
+        # Initialize the SSH connection (make sure SSH connection object is created first)
+        ssh_connection = SSH( "ssdrone.local", "ssdrone", "ssdrone")
+
+        # Run the SSH communication in a separate thread
+        threading.Thread(target=self._send_json_via_ssh, args=(json_payload, ssh_connection)).start()
+
+        
+    def _send_json_via_ssh(self, json_payload, ssh_connection):
+        # Connect to the Raspberry Pi over SSH
+        ssh_connection.connect()  # This uses the SSH instance passed in
+        
+        # Construct the command to send JSON and execute the script
+        command = f'echo \'{json_payload}\' > thruster_states.json && python3 Downloads/RPI5_JSON.py'
+        
+        # Execute the command
+        output, error = ssh_connection.execute_command(command)
+        
+        # Output logging for the SSH communication
+        if output:
+            print(f"SSH Response: {output}")
+        if error:
+            print(f"SSH Error: {error}")
+        
+        # Close the SSH connection after command execution
+        ssh_connection.close()  
+        print("SSH connection closed.")
+
+    
     def clear_logger(self):
         """Clears all text from the logger."""
         self.response_log.config(state=NORMAL)  # Enable the logger for editing
@@ -207,6 +268,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
 
 
     ### FUNTION OF +X THRUSTER
+
     def plus_x(self):
         for t in thrust:  # Use 't' to represent each thruster ID directly
             if t in ["1B", "2C", "1F", "2G"]:  # Check if the thruster is in this list
@@ -216,6 +278,8 @@ class DronesGui:  # Blueprint of our GUI, Class.
             elif t in ["1A", "1E", "2D", "2H"]:  # Check if the thruster is in this list
                 self.selected_thruster_states[t].set("OFF")
                 self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
+
+        self.send_thruster_states()
 
     ### FUNTION OF -X THRUSTER
     def minus_x(self):
@@ -294,6 +358,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
                 self.selected_thruster_states[t].set("OFF")
                 self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
     
+
     ### FUNCTON TO TURN ALL THRUSTERS OFF
     def off(self):
         for t in thrust:
@@ -321,6 +386,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
         self.master.after(1000, lambda: self.off())
         self.master.after(2000, lambda: self.minus_y())
         self.master.after(3000, lambda: self.off())
+
 
 
   
