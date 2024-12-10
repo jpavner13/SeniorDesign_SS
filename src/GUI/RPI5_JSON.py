@@ -3,6 +3,9 @@ import RPi.GPIO as GPIO
 
 # GPIO setup
 GPIO.setmode(GPIO.BCM)
+
+# These are the GPIO Peripherals Specifically not the actual Pins of the RPI5
+
 pins = {"1A": 17, "1B": 18, "2C": 27, "2D": 22, "1E": 23, "1F": 24, "2G": 25, "2H": 4}
 for pin in pins.values():
     GPIO.setup(pin, GPIO.OUT)
