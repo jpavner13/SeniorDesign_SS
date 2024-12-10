@@ -6,6 +6,8 @@ from SSH_Connection import SSH
 
 #TODO: Plan for these functions to call scripts or a script(GUI_commands.py) with actual function definitions
 " ********* We want to make sure that this is our GUI init function and this is to make sure this script isn't 1000+ lines *********"
+thrust = ["1A", "1B", "2C", "2D", "1E", "1F", "2G", "2H"]
+state = ["ON", "OFF"]
 
 thrust = ["1A", "1B", "2C", "2D", "1E", "1F", "2G", "2H"]
 
@@ -54,10 +56,10 @@ class DronesGui:  # Blueprint of our GUI, Class.
 
         #Terminal window
 
-        self.terminal_frame = Frame(self.master, bg="black", bd=0, width=350, height=300)
-        self.terminal_frame.pack(side=BOTTOM,padx=10, pady=10, anchor="s")  
+        self.terminal_frame = Frame(self.master, bg="black", bd=0)
+        self.terminal_frame.place(relx=0.5, rely=1.0, anchor="s", width=950, height=100, x = -25)
 
-        self.terminal_input = Text(self.terminal_frame, height=5, width=100, font=("Courier", 12), bg="black", fg="white")
+        self.terminal_input = Text(self.terminal_frame, height=5, width=100, font=("Courier", 20), bg="black", fg="white")
         self.terminal_input.pack(side=BOTTOM, padx=10)
 
         self.terminal_input.bind("<Return>", self.execute_command)
@@ -68,7 +70,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
         # Thrustar Command Box
 
         Thruster_Frame = Frame(self.master, bg="grey")
-        Thruster_Frame.place(relx=0, rely=1.0, anchor="sw", width=200, height=350)
+        Thruster_Frame.place(relx=0, rely=1.0, anchor="sw", width=200, height=400)
 
         Label(Thruster_Frame, text="Thrusters", bg="grey", fg="white", font=("Courier", 24, "bold")).grid(row=0, column=1, columnspan=3, pady=(10, 10))
 
@@ -78,19 +80,21 @@ class DronesGui:  # Blueprint of our GUI, Class.
         thrusters = ["1A", "1B", "2C", "2D", "1E", "1F", "2G", "2H"]
 
         # "i" is the counter that iterates throughout the list of Buttons
-
+        self.selected_thruster_states = {thruster: StringVar(value="OFF") for thruster in thrusters}
+        # self.thruster_previous_states = {thruster: "OFF" for thruster in thrusters}  # Initialize previous states
         for i, thruster in enumerate(thrusters):
             # Add label for each thruster
             Label(Thruster_Frame, text=thruster, bg="black", fg="white", font=("Helvetica", 10)).grid(row=i+1, column=0, padx=10, pady=5, sticky="w")
             
             # Add radio buttons for ON and OFF
             self.thruster_states[thruster] = StringVar(value="OFF")  # Default state is OFF
-            Radiobutton(Thruster_Frame, text="ON", variable=self.thruster_states[thruster], value="ON", 
-                        bg="black", fg="white", selectcolor="gray", activebackground="black", activeforeground="white").grid(row=i+1, column=1, padx=5, pady=5)
-            Radiobutton(Thruster_Frame, text="OFF", variable=self.thruster_states[thruster], value="OFF", 
-                        bg="black", fg="white", selectcolor="gray", activebackground="black", activeforeground="white").grid(row=i+1, column=2, padx=5, pady=5)
+            Radiobutton(Thruster_Frame, text="ON", variable=self.selected_thruster_states[thruster], value="ON", 
+                bg="black", fg="white", selectcolor="gray", activebackground="black", activeforeground="white").grid(row=i+1, column=1, padx=5, pady=5)
+            Radiobutton(Thruster_Frame, text="OFF", variable=self.selected_thruster_states[thruster], value="OFF", 
+                bg="black", fg="white", selectcolor="gray", activebackground="black", activeforeground="white").grid(row=i+1, column=2, padx=5, pady=5)
 
         # Test Button to log current states of thrusters (for demonstration)
+
         self.ssh_connection = SSH(
             host="172.20.10.2",  # Replace with your Raspberry Pi's IP address
             username="ssdrone.local",        # Replace with your Raspberry Pi's username
@@ -98,6 +102,9 @@ class DronesGui:  # Blueprint of our GUI, Class.
         )
         self.log_response(self.ssh_connection.connect())
 
+
+
+        Button(Thruster_Frame, text="Execute Command", command=self.execute_thruster_command, bg="red", fg="white").grid(row=len(thrusters)+1, column=0, columnspan=3, pady=20)
 
 
     def estop(self):
@@ -133,10 +140,46 @@ class DronesGui:  # Blueprint of our GUI, Class.
         # Add the command to history
         self.command_history.append(command)
         self.history_index = len(self.command_history)  # Move the history index to the end
-
-        if command == "move":
+        # self.clear_logger()
+        if command == "move": # example code of drone moving
             self.log_response("Drone moving!")
-        elif command == "clear":
+        elif command.startswith("set_thruster"): # command to
+            parts = command.split()
+            if len(parts) == 3:
+                thruster_id = parts[1].upper()
+                state = parts[2].upper()
+                if thruster_id in self.thruster_states and state in ["ON", "OFF"]:
+                    self.thruster_states[thruster_id].set(state)
+                    self.log_response(f"Thruster {thruster_id} {state}")
+                    #self.log_thruster_states()  # Log all states
+                else:
+                    self.log_response(f"Invalid thruster or state: {thruster_id} {state}")
+            else:
+                self.log_response("Invalid syntax. Use: set_thruster <ID> <STATE>.")
+        elif command == "+x": # positive x thrust
+            self.plus_x()
+        elif command == "-x": # negative x thrust
+            self.minus_x()
+        elif command == "+y": # positive y thrust
+            self.plus_y()
+        elif command == "-y": # negative y thrust
+            self.minus_y()
+        elif command == "+z": # positive z thrust
+            self.plus_z()
+        elif command == "-z": # negative z thrust
+            self.minus_z()
+        elif command == "+zs": # positive z spin thrust
+            self.spinp_z()
+        elif command == "-zs": # negative z spin thrust
+            self.spinm_z()  
+        elif command == "off":
+            self.off()
+        elif command == "drm1":
+            self.drm1()
+        elif command == "drm2":
+            self.drm2()
+        elif command == "clear": # clears the logger
+            self.clear_logger()
             self.terminal_input.delete("1.0", END)
             self.log_response("Terminal Cleared")
         else:
@@ -170,6 +213,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
             if state == "ON": # only updates if the thruster is on
                 self.thruster_states[thruster].set(state)  # Update the thruster state
                 self.log_response(f"Thruster {thruster} {state}") # only prints if on
+
 
 
     # def clear_logger(self):
@@ -215,7 +259,15 @@ class DronesGui:  # Blueprint of our GUI, Class.
         ssh_connection.close()  
         print("SSH connection closed.")
 
-      ### FUNTION OF +X THRUSTER
+    
+    def clear_logger(self):
+        """Clears all text from the logger."""
+        self.response_log.config(state=NORMAL)  # Enable the logger for editing
+        self.response_log.delete("1.0", END)  # Clear all text
+        self.response_log.config(state=DISABLED)  # Disable editing again
+
+
+    ### FUNTION OF +X THRUSTER
 
     def plus_x(self):
         for t in thrust:  # Use 't' to represent each thruster ID directly
@@ -226,6 +278,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
             elif t in ["1A", "1E", "2D", "2H"]:  # Check if the thruster is in this list
                 self.selected_thruster_states[t].set("OFF")
                 self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
+
         self.send_thruster_states()
 
     ### FUNTION OF -X THRUSTER
@@ -305,6 +358,35 @@ class DronesGui:  # Blueprint of our GUI, Class.
                 self.selected_thruster_states[t].set("OFF")
                 self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
     
+
+    ### FUNCTON TO TURN ALL THRUSTERS OFF
+    def off(self):
+        for t in thrust:
+            self.selected_thruster_states[t].set("OFF")
+            self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
+            self.log_response(f"Thruster {t} {state[1]}")  # Log the action
+    
+
+    ## FUNCTION TO RUN DRM1
+    def drm1(self):
+        # Log an initial message
+        self.plus_x()
+        
+        # Schedule the next log response with delays using 'self.master.after'
+        self.master.after(1000, lambda: self.off())
+        self.master.after(2000, lambda: self.minus_x())
+        self.master.after(3000, lambda: self.off())
+
+    ## FUNCTION TO RUN DRM2
+    def drm2(self):
+        # Log an initial message
+        self.plus_y()
+        
+        # Schedule the next log response with delays using 'self.master.after'
+        self.master.after(1000, lambda: self.off())
+        self.master.after(2000, lambda: self.minus_y())
+        self.master.after(3000, lambda: self.off())
+
 
 
   
