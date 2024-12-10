@@ -11,6 +11,8 @@ state = ["ON", "OFF"]
 
 thrust = ["1A", "1B", "2C", "2D", "1E", "1F", "2G", "2H"]
 
+# comment
+x = 5;
 class DronesGui:  # Blueprint of our GUI, Class.
     def __init__(self, master):
         self.master = master  
