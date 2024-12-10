@@ -97,9 +97,12 @@ class DronesGui:  # Blueprint of our GUI, Class.
 
         # Test Button to log current states of thrusters (for demonstration)
 
+        #Communication to Drone SSH
+
         self.ssh_connection = SSH(
-            host="172.20.10.2",  # Replace with your Raspberry Pi's IP address
-            username="ssdrone.local",        # Replace with your Raspberry Pi's username
+            #host is either 170.20.10.2 or ssdrone.local
+            host="ssdrone.local",  # Replace with your Raspberry Pi's IP address
+            username="ssdrone",        # Replace with your Raspberry Pi's username
             password="ssdrone"  # Replace with your Raspberry Pi's password
         )
         self.log_response(self.ssh_connection.connect())
@@ -216,14 +219,6 @@ class DronesGui:  # Blueprint of our GUI, Class.
                 self.thruster_states[thruster].set(state)  # Update the thruster state
                 self.log_response(f"Thruster {thruster} {state}") # only prints if on
 
-
-
-    # def clear_logger(self):
-    #     """Clears all text from the logger."""
-    #     self.response_log.config(state=NORMAL)  # Enable the logger for editing
-    #     self.response_log.delete("1.0", END)  # Clear all text
-    #     self.response_log.config(state=DISABLED)  # Disable editing again
-
     def send_thruster_states(self):
         """
         Sends the thruster states as a JSON payload to the Raspberry Pi over SSH.
@@ -233,20 +228,17 @@ class DronesGui:  # Blueprint of our GUI, Class.
         
         # Convert to JSON
         json_payload = json.dumps(thruster_states)
-
         # Initialize the SSH connection (make sure SSH connection object is created first)
         ssh_connection = SSH( "ssdrone.local", "ssdrone", "ssdrone")
-
         # Run the SSH communication in a separate thread
         threading.Thread(target=self._send_json_via_ssh, args=(json_payload, ssh_connection)).start()
-
         
     def _send_json_via_ssh(self, json_payload, ssh_connection):
         # Connect to the Raspberry Pi over SSH
         ssh_connection.connect()  # This uses the SSH instance passed in
         
         # Construct the command to send JSON and execute the script
-        command = f'echo \'{json_payload}\' > thruster_states.json && python3 Downloads/RPI5_JSON.py'
+        command = f'echo \'{json_payload}\' > /home/ssdrone/Downloads/thruster_states.json && sudo python3 /home/ssdrone/Downloads/RPI5_JSON.py'
         
         # Execute the command
         output, error = ssh_connection.execute_command(command)
@@ -260,6 +252,47 @@ class DronesGui:  # Blueprint of our GUI, Class.
         # Close the SSH connection after command execution
         ssh_connection.close()  
         print("SSH connection closed.")
+
+    # def send_thruster_states(self):
+    #     """
+    #     Sends the thruster states as a JSON payload to the Raspberry Pi over SSH.
+    #     """
+    #     # Collect thruster states, explicitly sending "ON" or "OFF"
+    #     thruster_states = {key: "ON" if value.get() else "OFF" for key, value in self.thruster_states.items()}
+        
+    #     # Convert to JSON
+    #     json_payload = json.dumps(thruster_states)
+
+    #     # Initialize the SSH connection
+    #     ssh_connection = SSH("ssdrone.local", "ssdrone", "ssdrone")
+
+    #     # Run the SSH communication in a separate thread
+    #     threading.Thread(target=self._send_json_via_ssh, args=(json_payload, ssh_connection)).start()
+
+    # def _send_json_via_ssh(self, json_payload, ssh_connection):
+    #     """
+    #     Sends JSON to the Raspberry Pi over SSH and triggers GPIO updates.
+    #     """
+    #     try:
+    #         # Connect to the Raspberry Pi
+    #         ssh_connection.connect()
+            
+    #         # Construct the command to send JSON and execute the script
+    #         command = f'echo \'{json_payload}\' > thruster_states.json && python3 Downloads/RPI5_JSON.py'
+            
+    #         # Execute the command
+    #         output, error = ssh_connection.execute_command(command)
+            
+    #         # Logging the SSH response
+    #         if output:
+    #             print(f"SSH Response: {output}")
+    #         if error:
+    #             print(f"SSH Error: {error}")
+    #     except Exception as e:
+    #         print(f"Error during SSH operation: {e}")
+    #     finally:
+    #         ssh_connection.close()
+    #         print("SSH connection closed.")
 
     
     def clear_logger(self):
@@ -293,6 +326,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
             elif t in ["1B", "2C", "1F", "2G"]:  # Check if the thruster is in this list
                 self.selected_thruster_states[t].set("OFF")
                 self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
+        self.send_thruster_states()
 
     ### FUNTION OF +Y THRUSTER
     def plus_y(self):
@@ -304,6 +338,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
             elif t in ["1A", "1B", "1E", "1F"]:  # Check if the thruster is in this list
                 self.selected_thruster_states[t].set("OFF")
                 self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
+        self.send_thruster_states()
 
     ### FUNTION OF -Y THRUSTER
     def minus_y(self):
@@ -315,6 +350,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
             elif t in ["2C", "2G", "2D", "2H"]:  # Check if the thruster is in this list
                 self.selected_thruster_states[t].set("OFF")
                 self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
+        self.send_thruster_states()
 
     ### FUNTION OF +Z THRUSTER
     def plus_z(self):
@@ -326,6 +362,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
             elif t in ["1E", "1F", "2H", "2G"]:  # Check if the thruster is in this list
                 self.selected_thruster_states[t].set("OFF")
                 self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
+        self.send_thruster_states()
 
     ### FUNTION OF -Z THRUSTER
     def minus_z(self):
@@ -337,6 +374,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
             elif t in ["1A", "1B", "2C", "2D"]:  # Check if the thruster is in this list
                 self.selected_thruster_states[t].set("OFF")
                 self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
+        self.send_thruster_states()
 
     ### FUNTION OF +Z SPIN
     def spinp_z(self):
@@ -348,6 +386,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
             elif t in ["1B", "1F", "2D", "2H"]:  # Check if the thruster is in this list
                 self.selected_thruster_states[t].set("OFF")
                 self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
+        self.send_thruster_states()
 
     ### FUNTION OF -Z SPIN
     def spinm_z(self):
@@ -359,6 +398,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
             elif t in ["1A", "1E", "2C", "2G"]:  # Check if the thruster is in this list
                 self.selected_thruster_states[t].set("OFF")
                 self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
+        self.send_thruster_states()
     
 
     ### FUNCTON TO TURN ALL THRUSTERS OFF
@@ -367,6 +407,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
             self.selected_thruster_states[t].set("OFF")
             self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
             self.log_response(f"Thruster {t} {state[1]}")  # Log the action
+        self.send_thruster_states()
     
 
     ## FUNCTION TO RUN DRM1

@@ -18,7 +18,7 @@ class SSH:
             hostname=self.host,
             username=self.username,
             password=self.password,
-            timeout=5  # Set a 10-second timeout
+            timeout=7  # Set a 10-second timeout
         )
         return "SSH connection established successfully."
 
