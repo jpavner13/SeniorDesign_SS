@@ -156,8 +156,14 @@ class DronesGui:  # Blueprint of our GUI, Class.
             self.spinp_z()
         elif command == "-zs": # negative z spin thrust
             self.spinm_z()  
+        elif command == "off":
+            self.off()
+        elif command == "drm1":
+            self.drm1()
+        elif command == "drm2":
+            self.drm2()
         elif command == "clear": # clears the logger
-            # self.clear_logger()
+            self.clear_logger()
             self.terminal_input.delete("1.0", END)
             self.log_response("Terminal Cleared")
         else:
@@ -193,11 +199,11 @@ class DronesGui:  # Blueprint of our GUI, Class.
                 self.log_response(f"Thruster {thruster} {state}") # only prints if on
 
 
-    # def clear_logger(self):
-    #     """Clears all text from the logger."""
-    #     self.response_log.config(state=NORMAL)  # Enable the logger for editing
-    #     self.response_log.delete("1.0", END)  # Clear all text
-    #     self.response_log.config(state=DISABLED)  # Disable editing again
+    def clear_logger(self):
+        """Clears all text from the logger."""
+        self.response_log.config(state=NORMAL)  # Enable the logger for editing
+        self.response_log.delete("1.0", END)  # Clear all text
+        self.response_log.config(state=DISABLED)  # Disable editing again
 
 
     ### FUNTION OF +X THRUSTER
@@ -287,6 +293,35 @@ class DronesGui:  # Blueprint of our GUI, Class.
             elif t in ["1A", "1E", "2C", "2G"]:  # Check if the thruster is in this list
                 self.selected_thruster_states[t].set("OFF")
                 self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
+    
+    ### FUNCTON TO TURN ALL THRUSTERS OFF
+    def off(self):
+        for t in thrust:
+            self.selected_thruster_states[t].set("OFF")
+            self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
+            self.log_response(f"Thruster {t} {state[1]}")  # Log the action
+    
+
+    ## FUNCTION TO RUN DRM1
+    def drm1(self):
+        # Log an initial message
+        self.plus_x()
+        
+        # Schedule the next log response with delays using 'self.master.after'
+        self.master.after(1000, lambda: self.off())
+        self.master.after(2000, lambda: self.minus_x())
+        self.master.after(3000, lambda: self.off())
+
+    ## FUNCTION TO RUN DRM2
+    def drm2(self):
+        # Log an initial message
+        self.plus_y()
+        
+        # Schedule the next log response with delays using 'self.master.after'
+        self.master.after(1000, lambda: self.off())
+        self.master.after(2000, lambda: self.minus_y())
+        self.master.after(3000, lambda: self.off())
+
 
   
 root = Tk()
