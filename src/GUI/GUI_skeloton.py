@@ -8,11 +8,19 @@ from SSH_Connection import SSH
 " ********* We want to make sure that this is our GUI init function and this is to make sure this script isn't 1000+ lines *********"
 thrust = ["1A", "1B", "2C", "2D", "1E", "1F", "2G", "2H"]
 state = ["ON", "OFF"]
+ARMED = FALSE
 
-thrust = ["1A", "1B", "2C", "2D", "1E", "1F", "2G", "2H"]
+def arm():
+    global ARMED  # Declare that you're modifying the global variable
+    ARMED = True  # Update the global variable
+
+def disarm():
+    global ARMED
+    ARMED = FALSE
+    
+
 
 # comment
-x = 5;
 class DronesGui:  # Blueprint of our GUI, Class.
     def __init__(self, master):
         self.master = master  
@@ -105,7 +113,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
             username="ssdrone",        # Replace with your Raspberry Pi's username
             password="ssdrone"  # Replace with your Raspberry Pi's password
         )
-        self.log_response(self.ssh_connection.connect())
+        ### self.log_response(self.ssh_connection.connect())
 
 
 
@@ -115,6 +123,9 @@ class DronesGui:  # Blueprint of our GUI, Class.
     def estop(self):
         # TODO: Will need specific code to disconnect Battery from Larger Assembly
         # Feedback can be removed or replaced with some other action
+        self.off()
+        disarm()
+        self.log_response("Drone Disabled!")
         self.log_response("ESTOP action triggered!")  # or any other action
 
     def safety(self):
@@ -125,6 +136,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
     def enable(self):
         #TODO: Enable sensors, should be pressed after safety command
         #TODO: Should also be pressed before drone is able to even move
+        arm()
         self.log_response("Drone Enabled!")
     
     def log_response(self, message):
@@ -140,7 +152,12 @@ class DronesGui:  # Blueprint of our GUI, Class.
         #TODO: Again This will call a function (GUI_commands.py)
 
         # COMMANDS CASE INSENSITIVE can be lower or upper case || Let me know if y'all want case sensitive commands
+        
         command = self.terminal_input.get("1.0", END).strip().lower()  
+        if ARMED == FALSE and command != "clear":
+            self.log_response("Drone Not Armed!")
+            self.terminal_input.delete("1.0", END)
+            return "break"
 
         # Add the command to history
         self.command_history.append(command)
@@ -181,14 +198,23 @@ class DronesGui:  # Blueprint of our GUI, Class.
             self.off()
         elif command == "drm1":
             self.drm1()
+            self.terminal_input.delete("1.0", END)
+            return "break"
         elif command == "drm2":
             self.drm2()
+            self.terminal_input.delete("1.0", END)
+            return "break"
         elif command == "clear": # clears the logger
             self.clear_logger()
             self.terminal_input.delete("1.0", END)
             self.log_response("Terminal Cleared")
+            return "break"
         else:
             self.log_response(f"Unknown command: {command}")
+            self.terminal_input.delete("1.0", END)
+            return "break"
+        self.log()
+
 
         self.terminal_input.delete("1.0", END)  # Modified: Clears input after execution
         return "break"  # Prevents a newline after pressing Enter because Enter is key sends command
@@ -207,6 +233,9 @@ class DronesGui:  # Blueprint of our GUI, Class.
                 self.terminal_input.insert("1.0", self.command_history[self.history_index])
     
     def execute_thruster_command(self):
+        if ARMED == FALSE:
+            self.log_response("Drone Not Armed!")
+            return "break"
         # self.clear_logger()
         for thruster, state_var in self.selected_thruster_states.items(): # gets thruster states
             state = state_var.get()  # Get the current state (ON/OFF)
@@ -217,7 +246,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
             #     self.log_response(f"{thruster} changed to ON")
             if state == "ON": # only updates if the thruster is on
                 self.thruster_states[thruster].set(state)  # Update the thruster state
-                self.log_response(f"Thruster {thruster} {state}") # only prints if on
+        self.log()
 
     def send_thruster_states(self):
         """
@@ -226,12 +255,14 @@ class DronesGui:  # Blueprint of our GUI, Class.
         # Collect the thruster states into a dictionary
         thruster_states = {key: value.get() for key, value in self.thruster_states.items()}
         
+        """
         # Convert to JSON
         json_payload = json.dumps(thruster_states)
         # Initialize the SSH connection (make sure SSH connection object is created first)
         ssh_connection = SSH( "ssdrone.local", "ssdrone", "ssdrone")
         # Run the SSH communication in a separate thread
         threading.Thread(target=self._send_json_via_ssh, args=(json_payload, ssh_connection)).start()
+        """
         
     def _send_json_via_ssh(self, json_payload, ssh_connection):
         # Connect to the Raspberry Pi over SSH
@@ -253,47 +284,12 @@ class DronesGui:  # Blueprint of our GUI, Class.
         ssh_connection.close()  
         print("SSH connection closed.")
 
-    # def send_thruster_states(self):
-    #     """
-    #     Sends the thruster states as a JSON payload to the Raspberry Pi over SSH.
-    #     """
-    #     # Collect thruster states, explicitly sending "ON" or "OFF"
-    #     thruster_states = {key: "ON" if value.get() else "OFF" for key, value in self.thruster_states.items()}
-        
-    #     # Convert to JSON
-    #     json_payload = json.dumps(thruster_states)
-
-    #     # Initialize the SSH connection
-    #     ssh_connection = SSH("ssdrone.local", "ssdrone", "ssdrone")
-
-    #     # Run the SSH communication in a separate thread
-    #     threading.Thread(target=self._send_json_via_ssh, args=(json_payload, ssh_connection)).start()
-
-    # def _send_json_via_ssh(self, json_payload, ssh_connection):
-    #     """
-    #     Sends JSON to the Raspberry Pi over SSH and triggers GPIO updates.
-    #     """
-    #     try:
-    #         # Connect to the Raspberry Pi
-    #         ssh_connection.connect()
-            
-    #         # Construct the command to send JSON and execute the script
-    #         command = f'echo \'{json_payload}\' > thruster_states.json && python3 Downloads/RPI5_JSON.py'
-            
-    #         # Execute the command
-    #         output, error = ssh_connection.execute_command(command)
-            
-    #         # Logging the SSH response
-    #         if output:
-    #             print(f"SSH Response: {output}")
-    #         if error:
-    #             print(f"SSH Error: {error}")
-    #     except Exception as e:
-    #         print(f"Error during SSH operation: {e}")
-    #     finally:
-    #         ssh_connection.close()
-    #         print("SSH connection closed.")
-
+    def log(self):
+        for thruster, state_var in self.selected_thruster_states.items(): # gets thruster states
+            state = state_var.get()  # Get the current state (ON/OFF)
+            if state == "ON": # only updates if the thruster is on
+                self.log_response(f"Thruster {thruster} {state}") # only prints if 
+        self.send_thruster_states()
     
     def clear_logger(self):
         """Clears all text from the logger."""
@@ -309,12 +305,10 @@ class DronesGui:  # Blueprint of our GUI, Class.
             if t in ["1B", "2C", "1F", "2G"]:  # Check if the thruster is in this list
                 self.selected_thruster_states[t].set("ON")
                 self.thruster_states[t].set(state[0])  # Set thruster to "ON"
-                self.log_response(f"Thruster {t} {state[0]}")  # Log the action
             elif t in ["1A", "1E", "2D", "2H"]:  # Check if the thruster is in this list
                 self.selected_thruster_states[t].set("OFF")
                 self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
 
-        self.send_thruster_states()
 
     ### FUNTION OF -X THRUSTER
     def minus_x(self):
@@ -322,11 +316,9 @@ class DronesGui:  # Blueprint of our GUI, Class.
             if t in ["1A", "1E", "2D", "2H"]:  # Check if the thruster is in this list
                 self.selected_thruster_states[t].set("ON")
                 self.thruster_states[t].set(state[0])  # Set thruster to "ON"
-                self.log_response(f"Thruster {t} {state[0]}")  # Log the action
             elif t in ["1B", "2C", "1F", "2G"]:  # Check if the thruster is in this list
                 self.selected_thruster_states[t].set("OFF")
                 self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
-        self.send_thruster_states()
 
     ### FUNTION OF +Y THRUSTER
     def plus_y(self):
@@ -334,11 +326,9 @@ class DronesGui:  # Blueprint of our GUI, Class.
             if t in ["2C", "2G", "2D", "2H"]:  # Check if the thruster is in this list
                 self.selected_thruster_states[t].set("ON")
                 self.thruster_states[t].set(state[0])  # Set thruster to "ON"
-                self.log_response(f"Thruster {t} {state[0]}")  # Log the action
             elif t in ["1A", "1B", "1E", "1F"]:  # Check if the thruster is in this list
                 self.selected_thruster_states[t].set("OFF")
                 self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
-        self.send_thruster_states()
 
     ### FUNTION OF -Y THRUSTER
     def minus_y(self):
@@ -346,11 +336,9 @@ class DronesGui:  # Blueprint of our GUI, Class.
             if t in ["1A", "1B", "1E", "1F"]:  # Check if the thruster is in this list
                 self.selected_thruster_states[t].set("ON")
                 self.thruster_states[t].set(state[0])  # Set thruster to "ON"
-                self.log_response(f"Thruster {t} {state[0]}")  # Log the action
             elif t in ["2C", "2G", "2D", "2H"]:  # Check if the thruster is in this list
                 self.selected_thruster_states[t].set("OFF")
                 self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
-        self.send_thruster_states()
 
     ### FUNTION OF +Z THRUSTER
     def plus_z(self):
@@ -358,11 +346,9 @@ class DronesGui:  # Blueprint of our GUI, Class.
             if t in ["1A", "1B", "2C", "2D"]:  # Check if the thruster is in this list
                 self.selected_thruster_states[t].set("ON")
                 self.thruster_states[t].set(state[0])  # Set thruster to "ON"
-                self.log_response(f"Thruster {t} {state[0]}")  # Log the action
             elif t in ["1E", "1F", "2H", "2G"]:  # Check if the thruster is in this list
                 self.selected_thruster_states[t].set("OFF")
                 self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
-        self.send_thruster_states()
 
     ### FUNTION OF -Z THRUSTER
     def minus_z(self):
@@ -370,11 +356,9 @@ class DronesGui:  # Blueprint of our GUI, Class.
             if t in ["1E", "1F", "2H", "2G"]:  # Check if the thruster is in this list
                 self.selected_thruster_states[t].set("ON")
                 self.thruster_states[t].set(state[0])  # Set thruster to "ON"
-                self.log_response(f"Thruster {t} {state[0]}")  # Log the action
             elif t in ["1A", "1B", "2C", "2D"]:  # Check if the thruster is in this list
                 self.selected_thruster_states[t].set("OFF")
                 self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
-        self.send_thruster_states()
 
     ### FUNTION OF +Z SPIN
     def spinp_z(self):
@@ -382,11 +366,9 @@ class DronesGui:  # Blueprint of our GUI, Class.
             if t in ["1A", "1E", "2C", "2G"]:  # Check if the thruster is in this list
                 self.selected_thruster_states[t].set("ON")
                 self.thruster_states[t].set(state[0])  # Set thruster to "ON"
-                self.log_response(f"Thruster {t} {state[0]}")  # Log the action
             elif t in ["1B", "1F", "2D", "2H"]:  # Check if the thruster is in this list
                 self.selected_thruster_states[t].set("OFF")
                 self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
-        self.send_thruster_states()
 
     ### FUNTION OF -Z SPIN
     def spinm_z(self):
@@ -394,11 +376,9 @@ class DronesGui:  # Blueprint of our GUI, Class.
             if t in ["1B", "1F", "2D", "2H"]:  # Check if the thruster is in this list
                 self.selected_thruster_states[t].set("ON")
                 self.thruster_states[t].set(state[0])  # Set thruster to "ON"
-                self.log_response(f"Thruster {t} {state[0]}")  # Log the action
             elif t in ["1A", "1E", "2C", "2G"]:  # Check if the thruster is in this list
                 self.selected_thruster_states[t].set("OFF")
                 self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
-        self.send_thruster_states()
     
 
     ### FUNCTON TO TURN ALL THRUSTERS OFF
@@ -406,28 +386,26 @@ class DronesGui:  # Blueprint of our GUI, Class.
         for t in thrust:
             self.selected_thruster_states[t].set("OFF")
             self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
-            self.log_response(f"Thruster {t} {state[1]}")  # Log the action
-        self.send_thruster_states()
     
 
     ## FUNCTION TO RUN DRM1
     def drm1(self):
         # Log an initial message
         self.plus_x()
-        
+        self.log()
         # Schedule the next log response with delays using 'self.master.after'
-        self.master.after(1000, lambda: self.off())
-        self.master.after(2000, lambda: self.minus_x())
-        self.master.after(3000, lambda: self.off())
+        self.master.after(1000, lambda: (self.off(),self.log()))
+        self.master.after(2000, lambda: (self.minus_x(), self.log()))
+        self.master.after(3000, lambda: (self.off(),self.log()))
 
     ## FUNCTION TO RUN DRM2
     def drm2(self):
         # Log an initial message
         self.plus_y()
-        
+        self.log()
         # Schedule the next log response with delays using 'self.master.after'
         self.master.after(1000, lambda: self.off())
-        self.master.after(2000, lambda: self.minus_y())
+        self.master.after(2000, lambda: (self.minus_y(), self.log()))
         self.master.after(3000, lambda: self.off())
 
 
