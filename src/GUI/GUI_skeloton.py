@@ -177,10 +177,14 @@ class DronesGui:  # Blueprint of our GUI, Class.
             self.spinm_z()  
         elif command == "off":
             self.off()
+        elif command == "on":
+            self.on()
         elif command == "drm1":
             self.drm1()
         elif command == "drm2":
             self.drm2()
+        elif command == "drm3":
+            self.drm3()
         elif command == "clear": # clears the logger
             self.clear_logger()
             self.terminal_input.delete("1.0", END)
@@ -350,8 +354,9 @@ class DronesGui:  # Blueprint of our GUI, Class.
                 self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
         self.send_thruster_states()
 
+    
     ### FUNTION OF +Z THRUSTER
-    def plus_z(self):
+    def minus_z(self):
         for t in thrust:  # Use 't' to represent each thruster ID directly
             if t in ["1A", "1B", "2C", "2D"]:  # Check if the thruster is in this list
                 self.selected_thruster_states[t].set("ON")
@@ -363,7 +368,7 @@ class DronesGui:  # Blueprint of our GUI, Class.
         self.send_thruster_states()
 
     ### FUNTION OF -Z THRUSTER
-    def minus_z(self):
+    def plus_z(self):
         for t in thrust:  # Use 't' to represent each thruster ID directly
             if t in ["1E", "1F", "2H", "2G"]:  # Check if the thruster is in this list
                 self.selected_thruster_states[t].set("ON")
@@ -406,17 +411,21 @@ class DronesGui:  # Blueprint of our GUI, Class.
             self.thruster_states[t].set(state[1])  # Set thruster to "OFF"
             self.log_response(f"Thruster {t} {state[1]}")  # Log the action
         self.send_thruster_states()
-    
-
+    def on(self):
+        for t in thrust:
+            self.selected_thruster_states[t].set("ON")
+            self.thruster_states[t].set(state[0])  # Set thruster to "ON"
+            self.log_response(f"Thruster {t} {state[0]}")  # Log the action
+        self.send_thruster_states()
     ## FUNCTION TO RUN DRM1
     def drm1(self):
         # Log an initial message
         self.plus_x()
         
         # Schedule the next log response with delays using 'self.master.after'
-        self.master.after(1000, lambda: self.off())
-        self.master.after(2000, lambda: self.minus_x())
-        self.master.after(3000, lambda: self.off())
+        self.master.after(2000, lambda: self.off())
+        self.master.after(4000, lambda: self.minus_x())
+        self.master.after(6000, lambda: self.off())
 
     ## FUNCTION TO RUN DRM2
     def drm2(self):
@@ -424,9 +433,18 @@ class DronesGui:  # Blueprint of our GUI, Class.
         self.plus_y()
         
         # Schedule the next log response with delays using 'self.master.after'
-        self.master.after(1000, lambda: self.off())
-        self.master.after(2000, lambda: self.minus_y())
-        self.master.after(3000, lambda: self.off())
+        self.master.after(2000, lambda: self.off())
+        self.master.after(4000, lambda: self.minus_y())
+        self.master.after(6000, lambda: self.off())
+
+    def drm3(self):
+        # Log an initial message
+        self.plus_z()
+        
+        # Schedule the next log response with delays using 'self.master.after'
+        self.master.after(2000, lambda: self.off())
+        self.master.after(4000, lambda: self.minus_z())
+        self.master.after(6000, lambda: self.off())
 
 
 
